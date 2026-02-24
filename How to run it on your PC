@@ -1,0 +1,41 @@
+--clone the repository
+git clone https://github.com/TU_USUARIO/iiot-fault-detection.git
+cd iiot-fault-detection
+
+--Create and activate a virtual environment (required to interact with the app)
+python -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+
+--install dependencies
+pip install -r requirements.txt
+
+--Configure the database
+Make sure you have PostgreSQL running and create a database (for example, iiot_lab). Then run the SQL scripts in order to create the necessary tables and views:
+
+psql -U postgres -d iiot_lab -f sql/schema.sql
+psql -U postgres -d iiot_lab -f sql/views_for_training_v4.sql
+psql -U postgres -d iiot_lab -f sql/vibration_wide_full.sql
+psql -U postgres -d iiot_lab -f sql/session_pairs_byfile.sql
+psql -U postgres -d iiot_lab -f sql/aligned_ct_vib_views_v3.sql
+
+Note: Adjust the username (postgres) and password according to your configuration. You can use environment variables or modify the commands.
+
+--Data Ingestion- Place the dataset files in a folder (for example, ./data) and run:
+python ingesttodatabase.py \
+  --data_dir ./data \
+  --dsn "postgresql://postgres:tu_contraseña@localhost:5432/iiot_lab" \
+  --asset MOTOR_001 \
+  --overwrite
+
+Model Training
+To train the models (IsolationForest, SGD Logistic and the merged CT+VIB) for loads of 0, 2 and 4 Nm:
+
+--Run the API --The API allows you to make real-time predictions using the trained models.
+cd api
+uvicorn api_app:app --reload --port 8000
+
+-Run the Dashboard- Dashboards allow you to view the model's training data
+streamlit run dashboard/dashboard.py
+
+
